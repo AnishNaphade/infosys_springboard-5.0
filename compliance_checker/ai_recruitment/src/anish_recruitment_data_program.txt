@@ -1,0 +1,196 @@
+from together import Together
+import os
+import pandas as pd
+import time
+import random
+import openpyxl
+
+# Set your Together.ai API key
+os.environ["TOGETHER_API_KEY"] = "14584a845d2b95353a37129f7a6ce748e7212afdbd13129fa7c64dda4e5cfd0b"
+client = Together()
+
+# User details
+names = [
+    "Aaditya", "Aayu", "Bhuv", "Brij", "Chahal", "Chirag", "Daiwik", "Dipal", 
+    "Eashan", "Ehan", "Fanish", "Grishm", "Gyan", "Hans", "Hiral", "Ichaa", 
+    "Ilesh", "Jagrav", "Jivin", "Kairav", "Kanha", "Kripal", "Kunal", "Lahar", 
+    "Mahin", "Malay", "Manav", "Naksh", "Nakul", "Niraj", "Ojas", "Ovin", 
+    "Palash", "Praneel", "Raahi", "Rijul", "Ritul", "Saanjh", "Shray", "Snehal", 
+    "Taksha", "Tuhin", "Udanth", "Uttam", "Ujjwal", "Vaishnav", "Viral", 
+    "Wriddhish", "Yagna", "Yash", "Zev", "Aanya", "Amisha", "Bani", "Brinda", 
+    "Chaaya", "Charvi", "Dhanvi", "Disha", "Ekta", "Eshani", "Forum", "Gargi", 
+    "Gina", "Harini", "Harshini", "Hyma", "Iksha", "Ishani", "Janki", "Kamna", 
+    "Kashvi", "Laksha", "Larisa", "Manasi", "Mythily", "Naina", "Namrata", 
+    "Nirosha", "Oni", "Oshee", "Pratiti", "Parinita", "Pihu", "Rachna", "Roopali", 
+    "Ranjita", "Saanvi", "Sweta", "Tanima", "Trayi", "Trisha", "Upasana", 
+    "Upama", "Vanshika", "Varsha", "Veda", "Watika", "Yahvi", "Yashika", "Zoya"
+]
+
+last_names = [
+    "Raj", "Sharma", "Iyer", "Patel", "Verma", "Desai", "Gupta", "Mehta", 
+    "Chowdhury", "Yadav", "Reddy", "Naidu", "Kumar", "Nair", "Shukla", 
+    "Singh", "Dixit", "Soni", "Shah", "Joshi", "Kohli", "Ghosh", "Choudhury", 
+    "Basu", "Tiwari", "Pandey", "Rai", "Bhatt", "Gupta", "Jain", "Sahu", 
+    "Gupta", "Mishra", "Das", "Soni", "Rathore", "Saxena", "Bansal", 
+    "Khandelwal", "Garg", "Kapoor", "Bhat", "Kaur", "Chawla", "Chopra", 
+    "Agarwal", "Mittal", "Bedi", "Ruparel", "Gulati", "Seth", "Kumari", 
+    "Thakur", "Bhardwaj", "Singh", "Raghav"
+]
+
+languages_known = ["English", "Hindi", "Telugu", "Urdu", "French", "Tamil"]
+
+designations = {
+    "Data Scientist": {
+        "skills": ["Machine Learning", "Statistics", "Data Visualization", "Big Data", "Programming (Python, R)"],
+        "domains": ["Healthcare", "Finance", "Retail"]
+    },
+    "Software Engineer": {
+        "skills": ["Software Development", "Algorithms and Data Structures", "Version Control (Git)", "Database Management", "Web Development"],
+        "domains": ["E-commerce", "Banking", "Education"]
+    },
+    "Data Engineer": {
+        "skills": ["Data Warehousing", "ETL Processes", "Big Data Technologies (Hadoop, Spark)", "Database Administration", "Cloud Services (AWS, Azure)"],
+        "domains": ["Logistics", "Finance", "Healthcare"]
+    },
+    "UI Designer": {
+        "skills": ["User Experience (UX) Design", "Prototyping", "Graphic Design", "Interaction Design", "Front-End Development (HTML, CSS, JavaScript)"],
+        "domains": ["Gaming", "Retail", "Media"]
+    },
+    "Data Analyst": {
+        "skills": ["Data Visualization", "SQL", "Statistics", "Excel/Spreadsheet Analysis", "Business Intelligence (BI) Tools"],
+        "domains": ["Marketing", "Finance", "Healthcare"]
+    },
+    "Product Manager": {
+        "skills": ["Product Strategy", "Project Management", "Market Research", "Agile Methodologies", "Stakeholder Communication"],
+        "domains": ["Technology", "Retail", "Finance"]
+    }
+}
+
+# Experience levels and work environments
+experience_levels = ["Entry-level", "Mid-level", "Senior-level", "Lead", "Director"]
+work_environments = ["Remote", "Hybrid", "On-site"]
+
+# Predefined reasoning sets
+select_reasons = [
+    "Demonstrated strong skills relevant to the role. The candidate has shown a solid grasp of the necessary skills for the job, with practical experience that aligns well with the role's requirements.",
+    "Exhibited excellent problem-solving abilities. The candidate has successfully tackled complex challenges in their past roles, indicating a strong aptitude for finding solutions efficiently and effectively.",
+    "Showed great enthusiasm and potential for growth. The candidate displayed a high level of interest in learning and improving, suggesting that they are eager to develop their skills and take on new responsibilities.",
+    "Had impressive experience and qualifications. The candidate brings a wealth of experience and relevant qualifications that demonstrate their readiness to take on the role immediately.",
+    "Communicated ideas clearly and effectively. The candidate is able to articulate their thoughts and ideas concisely and professionally, making them an effective communicator in both written and verbal formats."
+]
+
+reject_reasons = [
+    "Lacked key technical skills for the role. The candidate did not possess the essential technical skills required for the position, which could hinder their performance if hired.",
+    "Demonstrated limited understanding of job requirements. The candidate's grasp of the role's demands was inadequate, suggesting they may struggle to meet the expectations of the job.",
+    "Had insufficient experience for the position. The candidate did not have enough relevant experience to confidently perform the job duties effectively.",
+    "Struggled to effectively communicate ideas. The candidate had difficulty expressing their ideas clearly, which could lead to miscommunication in the workplace.",
+    "Needed improvement in problem-solving skills. The candidate demonstrated a need for further development in critical thinking and problem-solving, which could impact their ability to handle challenges effectively."
+]
+
+# Function to generate a text response based on the given prompt
+def generate_text(prompt):
+    response = client.chat.completions.create(
+        model="meta-llama/Llama-Vision-Free",
+        messages=[{"role": "user", "content": f":{prompt}"}],
+    )
+    return response.choices[0].message.content
+
+# Generating data for the table
+data = []
+for i in range(1000):  # Adjust the range to generate more candidates if needed
+    id_formatted = f"abdul{i+1:04d}"  # Format the ID as "abdul0001" to "abdul9999"
+    name = random.choice(names)
+    last_name = random.choice(last_names)
+    full_name = f"{name} {last_name}"
+
+    designation = random.choice(list(designations.keys()))
+    expected_experience = random.choice(["0-2 years", "3-5 years", "6-8 years", "9+ years"])
+    domains_needed = ", ".join(designations[designation]["domains"])
+    job_description = f"Expected_experience : {expected_experience}, Domains: {domains_needed}"  # Ensure the job description matches the designation
+    
+
+    # Determine if the candidate should be selected or rejected
+    select_status = random.choice(["Select", "Reject"])
+
+    # Randomize experience level and work environment
+    experience_level = random.choice(experience_levels)
+    work_environment = random.choice(work_environments)
+
+    # Randomly select languages
+    selected_languages = random.sample(languages_known, k=random.randint(1, len(languages_known)))
+
+    # Select reasons for decision
+    reasons = random.sample(
+        [
+           "Demonstrated strong skills relevant to the role. The candidate has shown a solid grasp of the necessary skills for the job, with practical experience that aligns well with the role's requirements.",
+           "Exhibited excellent problem-solving abilities. The candidate has successfully tackled complex challenges in their past roles, indicating a strong aptitude for finding solutions efficiently and effectively.",
+           "Showed great enthusiasm and potential for growth. The candidate displayed a high level of interest in learning and improving, suggesting that they are eager to develop their skills and take on new responsibilities.",
+           "Had impressive experience and qualifications. The candidate brings a wealth of experience and relevant qualifications that demonstrate their readiness to take on the role immediately.",
+           "Communicated ideas clearly and effectively. The candidate is able to articulate their thoughts and ideas concisely and professionally, making them an effective communicator in both written and verbal formats."
+        ] 
+        if select_status == "Select" else [
+            "Lacked key technical skills for the role. The candidate did not possess the essential technical skills required for the position, which could hinder their performance if hired.",
+            "Demonstrated limited understanding of job requirements. The candidate's grasp of the role's demands was inadequate, suggesting they may struggle to meet the expectations of the job.",
+            "Had insufficient experience for the position. The candidate did not have enough relevant experience to confidently perform the job duties effectively.",
+            "Struggled to effectively communicate ideas. The candidate had difficulty expressing their ideas clearly, which could lead to miscommunication in the workplace.",
+            "Needed improvement in problem-solving skills. The candidate demonstrated a need for further development in critical thinking and problem-solving, which could impact their ability to handle challenges effectively."
+        ],
+    )
+    # Define prompt templates for transcripts, profiles
+    prompt_templates = {
+    "Select": {
+        "transcript": (f"Generate a positive, detailed interview transcript for candidate {full_name} interviewing for the role of {designation}. "
+            f"Job description: '{job_description}'. Highlight strengths such as demonstrated skills in {', '.join(designations[designation]['skills'])}, "
+            f"excellent problem-solving abilities, enthusiasm, and potential for growth. Emphasize their impressive experience in {domains_needed}. "
+            f"Do not generate generic statements like 'Here is an interview transcript for ...'."),
+                "profile":(
+            f"Generate a positive, detailed profile for candidate {full_name} who is interviewing for the role of {designation}. "
+            f"Highlight their strengths, such as a solid foundation in key skills like {', '.join(designations[designation]['skills'])}, "
+            f"relevant domain experience in {', '.join(domains_needed)}, and enthusiasm to contribute. Mention any noteworthy achievements, "
+            f"such as successful projects or past roles in similar domains. Mention their potential to excel and grow within the organization. "
+            f"Ensure that the profile is focused on showcasing their qualifications in the context of the job description."
+            f"Do not generate generic statements like 'Here is a profile for ...'.")
+            },
+    "Reject": {
+        "transcript":  (
+            f"Generate a detailed, constructive interview transcript for candidate {full_name} interviewing for the role of {designation}. "
+            f"Job description: '{job_description}'. Mention areas of improvement, such as lacking key technical skills in {', '.join(designations[designation]['skills'])}, "
+            f"insufficient experience in the required domains, and limited understanding of job requirements. Highlight reasons like 'Struggled to communicate ideas' or 'Needed improvement in problem-solving skills'. "
+            f"Do not generate generic statements like 'Here is an interview transcript for ...'."),
+        "profile": (
+            f"Generate a detailed profile for candidate {full_name} who is interviewing for the role of {designation}. "
+            f"Focus on areas where the candidate's skills did not align with the job requirements, such as lacking proficiency in {', '.join(designations[designation]['skills'])}, "
+            f"or insufficient experience in {', '.join(domains_needed)}. Mention any concerns raised during the interview, such as difficulty with certain tasks or lack of familiarity with specific tools or technologies. "
+            f"Despite these gaps, acknowledge their potential for growth if given further training or exposure. "
+            f"Ensure that the profile emphasizes constructive feedback while being respectful."
+            f"Do not generate generic statements like 'Here is a profile for ...'.")
+            }
+      }
+
+
+    # Construct prompts based on the selection status
+    prompt_transcript = prompt_templates[select_status]["transcript"].format(name=full_name, designation=designation, job_description=", ".join(job_description))
+    prompt_profile = prompt_templates[select_status]["profile"].format(name=full_name, designation=designation, job_description=", ".join(job_description), experience_level=experience_level, work_environment=work_environment, languages_known=", ".join(selected_languages), expected_experience=expected_experience, domains_needed=domains_needed)
+
+    # Generate the transcript and profile
+    transcript = generate_text(prompt_transcript)
+    time.sleep(5)
+    profile = generate_text(prompt_profile)
+    time.sleep(5)
+
+    # Add to dataset
+    data.append({
+        "Id": id_formatted,
+        "Name": full_name,
+        "Role": designation,
+        "Transcript": transcript,
+        "Profile": profile,
+        "Select/Reject": select_status,
+        "Job Description": job_description,
+        "Reason for Decision": ", ".join(reasons),
+    })
+
+# Convert to DataFrame and save as excel
+df = pd.DataFrame(data)
+print(df)
+df.to_excel("recruitment_data.xlsx", index=False)
